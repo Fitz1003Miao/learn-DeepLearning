@@ -38,14 +38,25 @@ def main():
         os.remove(image_url_tar_file)
 
     image_url_txt_file = os.path.join(data_folder, "spring10_urls.txt")
-    
-    images_label = []
-    images_id = []
-    images_url = []
 
-    with open(image_url_txt_file, "r") as f:
-        
-    
+    img_folder = os.path.join(data_folder, 'img')
+    if not os.path.exists(img_folder):
+        os.makedirs(img_folder, exist_ok = True)
+        img_types = set()
 
+        with open(image_url_txt_file, "r") as f:
+            for line in f.readlines():
+                image_name, image_url = line.strip('\n').split('\t')
+                img_type = image_url.split['.'][-1]
+
+                isdownload = download_from_url(image_url, os.path.join(img_folder, image_name + "." + img_type))
+
+                if isdownload:
+                    img_types.add(img_type)
+                    print(image_name, " has done")
+                else:
+                    print(image_name, " has passed")
+
+            print(img_types)            
 if __name__ == "__main__":
     main()
