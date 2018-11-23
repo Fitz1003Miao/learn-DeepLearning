@@ -13,8 +13,11 @@ def main():
     folder = args.folder
 
     for img in os.listdir(folder):
-        img_data = cv2.imread(os.path.join(folder, img))
+        origin_img_data = cv2.imread(os.path.join(folder, img), -1)
+        origin_img_shape = origin_img_data.shape
         
+        
+
 
 
 if __name__ == "__main__":
