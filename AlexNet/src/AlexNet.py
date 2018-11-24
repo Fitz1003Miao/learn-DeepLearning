@@ -9,7 +9,7 @@ def LRN(input, k, bias, alpha, beta, name):
 def dropout(input, keepPro, name = None):
     return tf.nn.dropout(input, keep_prob = keepPro, name = name)
 
-def conv(input, filter_num, kHeight, kWidth, strideX, strideY, name, group = 1, padding = "SAME"):
+def convLayer(input, filter_num, kHeight, kWidth, strideX, strideY, name, group = 1, padding = "SAME"):
     channel = int(input.get_shape()[-1])
     with tf.variable_scope(name) as scope:
         kernel = tf.get_varibale('k', shape = [kHeight, kWidth, channel / group, filter_num])
@@ -33,40 +33,60 @@ def fcLayer(input, inputD, outputD, name):
 
 class AlexNet(object):
     def __init__(self, input, setting):
-        self.out = []
-        conv1 = conv(input = input, filter_num = 96, kHeight = 11, kWidth = 11, strideX = 4, strideY = 4, name = "conv1", group = 1, padding = "SAME")
-        lrn1 = LRN(input = conv1, k = 2, bias = 1, alpha = 2e-05, beta = 0.75, name = "norm1")
-        pool1 = maxPoolLayer(input = lrn1, kHeight = 3, kWidth = 3, strideX = 2, strideY = 2, name = "pool1", padding = "VALID")
+        output = []
+        output.append(input)
+        for convLayer_param in setting.convLayer_params:
 
-        conv2 = conv(input = pool1, filter_num = 256, kHeight = 5, kWidth = 5, strideX = 1, strideY = 1, name = "conv2", group = 2, padding = "SAME")
-        lrn2 = LRN(input = conv2, k = 2, bias = 1, alpha = 2e-05, beta = 0.75, name = "norm2")
-        pool2 = maxPoolLayer(input = lrn2, kHeight = 3, kWidth = 3, strideX = 2, strideY = 2, name = "pool2", padding = "VALID")
+            conv_kernel_num = convLayer_param['kernel_num']
+            conv_kernel_Height = convLayer_param['conv_kernel_height']
+            conv_kernel_width = convLayer_param['conv_kernel_width']
+            conv_kernel_strideX = convLayer_param['conv_strideX']
+            conv_kernel_strideY = convLayer_param['conv_strideY']
+            conv_name = convLayer_param['conv_name']
+            group = convLayer_param['group']
+            conv_padding = convLayer_param['conv_padding']
+            lrn_index = convLayer_param['lrn_index']
+            pool_index = convLayer_param['pool_index']
 
-        conv3 = conv(input = pool2, filter_num = 384, kHeight = 3, kWidth = 3, strideX = 1, strideY = 1, name = "conv3", group = 1, padding = "SAME")
+            input = output[-1]
 
-        conv4 = conv(input = conv3, filter_num = 384, kHeight = 3, kWidth = 3, strideX = 1, strideY = 1, name = "conv4", group = 2, padding = "SAME")
-        
-        conv5 = conv(input = conv4, filter_num = 256, kHeight = 3, kWidth = 3, strideX = 1, strideY = 1, name = "conv5", group = 2, padding = "SAME")
-        pool5 = maxPoolLayer(input = conv5, kHeight = 3, kWidth = 3, strideX = 2, strideY = 2, name = "pool5", padding = "VALID")
+            out = convLayer(input = input, filter_num = conv_kernel_num, kHeight = conv_kernel_Height, kWidth = conv_kernel_width, strideX = conv_kernel_strideX, strideY = conv_kernel_strideY, name = conv_name, group = group, padding = conv_padding)
+            
+            if lrn_index is not None:
+                lrn_k = setting.lrn_params[lrn_index]['lrn_k']
+                lrn_bias = setting.lrn_params[lrn_index]['lrn_bias']
+                lrn_alpha = setting.lrn_params[lrn_index]['lrn_alpha']
+                lrn_beta = setting.lrn_params[lrn_index]['lrn_beta']
+                lrn_name = setting.lrn_params[lrn_index]['lrn_name']
 
-        fcIn = tf.reshape(pool5, [-1, 256 * 6 * 6])
-        for fcLayers_param in setting.fcLayers_params:
-            fcIn = self.out[-1]
+                out = LRN(input = out, k = lrn_k, bias = lrn_bias, alpha = lrn_alpha, beta = lrn_beta, name = lrn_name)
 
-            inputD = fcLayers_param['inputD']
-            outputD = fcLayers_param['outputD']
-            keepPro = fcLayers_param['keepPro']
-            name = fcLayers_param['name']
+            if pool_index is not None:
+                pool_kernel_height = setting.pool_params[pool_index]['pool_kernel_height']
+                pool_kernel_width = setting.pool_params[pool_index]['pool_kernel_width']
+                pool_strideX = setting.pool_params[pool_index]['pool_strideX']
+                pool_strideY = setting.pool_params[pool_index]['pool_strideY']
+                pool_name = setting.pool_params[pool_index]['pool_name']
+                pool_padding = setting.pool_params[pool_index]['pool_padding']
+
+                out = maxPoolLayer(input = out, kHeight = pool_kernel_height, kWidth = pool_kernel_width, strideX = pool_strideX, strideY = pool_strideY, name = pool_name, padding = pool_padding)
+            
+        output[-1] = tf.reshape(output[-1], [-1, 256 * 6 * 6])
+        for fcLayer_param in setting.fcLayer_params:
+            fcIn = output[-1]
+
+            inputD = fcLayer_param['inputD']
+            outputD = fcLayer_param['outputD']
+            keepPro = fcLayer_param['keepPro']
+            name = fcLayer_param['name']
 
             fc = fcLayer(input = fcIn, inputD = inputD, outputD = outputD, name = name)
             if keepPro is not None:
                 out = dropout(fc, keepPro)
             else:
                 out = fc
-            self.out.append(out)
+            output.append(out)
 
-        fc2 = fcLayer(input = dropout1, inputD = 4096, outputD = 4096, name = "fc2")
-        dropout2 = dropout(fc2, 0.5)
-
-        self.fc3 = fcLayer(input = dropout2, inputD = 4096, outputD = setting.CLASS_NUM, name = "fc3")
+        self.out = output[-1]
+        
 
