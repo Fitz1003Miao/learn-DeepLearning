@@ -1,6 +1,7 @@
 import cv2
 import os
 import h5py
+import numpy as np
 
 CLASS_NAME = ['cat', 'dog']
 
@@ -68,4 +69,25 @@ def saveList(file_list, txt):
             f.write(file + "\n")
         f.close()
 
-def 
+def load_data(file):
+    with open(file, 'r') as f:
+        points = []
+        labels = []
+        for line in f.readlines():
+            path = line.strip('\n')
+            data = h5py.File(path, 'r')
+            points.append(data['data'][...].astype(np.float32))
+            labels.append(data['type'][...].astype(np.int64))
+
+        return (np.concatenate(points, axis = 0), np.concatenate(labels, axis = 0))
+
+def shuffle(data, label):
+    assert(data.shape[0] == label.shape[0])
+
+    num = data.shape[0]
+    indices = np.arange(0, num)
+    np.random.shuffle(indices)
+
+    return data[indices][...], label[indices][...]
+
+    

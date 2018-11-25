@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 def maxPoolLayer(input, kHeight, kWidth, strideX, strideY, name, padding = "SAME"):
-    return tf.nn.max_pool(input = input, ksize = [1, kHeight, kWidth, 1], strides = [1, strideX, strideY, 1], padding = padding, name = name)
+    return tf.nn.max_pool(input, ksize = [1, kHeight, kWidth, 1], strides = [1, strideX, strideY, 1], padding = padding, name = name)
 
 def LRN(input, k, bias, alpha, beta, name):
     return tf.nn.local_response_normalization(input = input, depth_radius = k,bias = bias, alpha = alpha, beta = beta, name = name)
@@ -12,14 +12,15 @@ def dropout(input, keepPro, name = None):
 def convLayer(input, filter_num, kHeight, kWidth, strideX, strideY, name, group = 1, padding = "SAME"):
     channel = int(input.get_shape()[-1])
     with tf.variable_scope(name) as scope:
-        kernel = tf.get_varibale('k', shape = [kHeight, kWidth, channel / group, filter_num])
-        
+        kernel = tf.get_variable('k', shape = [kHeight, kWidth, channel / group, filter_num])
+        b = tf.get_variable('b', shape = [filter_num])
         inputs = tf.split(axis = -1, value = input, num_or_size_splits = group)
         kernels = tf.split(axis = -1, value = kernel, num_or_size_splits = group)
+        bs = tf.split(axis = -1, value = b, num_or_size_splits = group)
 
         res = []
-        for (x, k) in zip(inputs, kernels):
-            res.append(tf.nn.conv2d(x, k, strides = [1, strideX, strideY, 1], padding = padding))
+        for (x, k, b) in zip(inputs, kernels, bs):
+            res.append(tf.nn.bias_add(tf.nn.conv2d(x, k, strides = [1, strideX, strideY, 1], padding = padding), b))
         return tf.concat(res, axis = -1)
         
 def fcLayer(input, inputD, outputD, name):
@@ -70,14 +71,14 @@ class AlexNet(object):
                 pool_padding = setting.pool_params[pool_index]['pool_padding']
 
                 out = maxPoolLayer(input = out, kHeight = pool_kernel_height, kWidth = pool_kernel_width, strideX = pool_strideX, strideY = pool_strideY, name = pool_name, padding = pool_padding)
-            
+            output.append(out)
         output[-1] = tf.reshape(output[-1], [-1, 256 * 6 * 6])
         for fcLayer_param in setting.fcLayer_params:
             fcIn = output[-1]
 
             inputD = fcLayer_param['inputD']
             outputD = fcLayer_param['outputD']
-            keepPro = fcLayer_param['keepPro']
+            keepPro = fcLayer_param['KeepPro']
             name = fcLayer_param['name']
 
             fc = fcLayer(input = fcIn, inputD = inputD, outputD = outputD, name = name)

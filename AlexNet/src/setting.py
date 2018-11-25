@@ -1,12 +1,25 @@
 CLASS_NUM = 2
 
-convLayer_param_name = ('kernel_num', 'conv_kernel_height', 'conv_kernel_width', 'conv_strideX', 'conv_strideY', 'conv_name', 'group', 'conv_padding', 'lrn_index', 'pool_index')
+batch_size = 128
+num_epochs = 90
+step_val = 5
+label_weights = [1.0] * CLASS_NUM
+
+learning_rate_base = 0.01
+learning_rate_min = 0.0001
+momentum = 0.9
+weight_decay = 0.0005
+
+decay_steps = 5000
+decay_rate = 0.8
+
+convLayer_param_name = ('kernel_num', 'conv_kernel_height', 'conv_kernel_width', 'conv_strideX', 'conv_strideY', 'conv_name', 'bias', 'group', 'conv_padding', 'lrn_index', 'pool_index')
 convLayer_params = [dict(zip(convLayer_param_name, convLayers_param)) for convLayers_param in 
-                     [(96, 11, 11, 4, 4, "conv1", 1, "SAME", 0, 0),
-                      (256, 5, 5, 1, 1, "conv2", 2, "SAME", 1, 1),
-                      (384, 3, 3, 1, 1, "conv3", 1, "SAME", None, None),
-                      (384, 3, 3, 1, 1, "conv4", 2, "SAME", None, None),
-                      (256, 3, 3, 1, 1, "conv5", 2, "SAME", None, 2)]]
+                     [(96, 11, 11, 4, 4, "conv1", 1, 1, "SAME", 0, 0),
+                      (256, 5, 5, 1, 1, "conv2", 1, 2, "SAME", 1, 1),
+                      (384, 3, 3, 1, 1, "conv3", 1, 1, "SAME", None, None),
+                      (384, 3, 3, 1, 1, "conv4", 1, 2, "SAME", None, None),
+                      (256, 3, 3, 1, 1, "conv5", 1, 2, "SAME", None, 2)]]
 
 lrn_param_name = ('lrn_k', 'lrn_bias', 'lrn_alpha', 'lrn_beta', 'lrn_name')
 lrn_params = [dict(zip(lrn_param_name, lrn_param)) for lrn_param in 
