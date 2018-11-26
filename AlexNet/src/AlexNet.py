@@ -88,6 +88,6 @@ class AlexNet(object):
                 out = fc
             output.append(out)
 
-        self.logit = output[-1]
+        self.logits = output[-1]
         
 

@@ -41,65 +41,32 @@ def main():
     num_train = data_train.shape[0]
     num_val = data_val.shape[0]
 
-    batch_num = math.ceil(num_train * num_epochs / batch_size)
+    data_train_placeholder = tf.placeholder(data_train.dtype, data_train.shape, name = 'data_train')
+    label_train_placeholder = tf.placeholder(tf.int64, label_train.shape, name = 'label_train')
+    data_val_placeholder = tf.placeholder(data_val.dtype, data_val.shape, name = 'data_val')
+    label_val_placeholder = tf.placeholder(tf.int64, label_val.shape, name = 'label_val')
+    handle = tf.placeholder(tf.string, shape = [], name = 'handle')
+
+    dataset_train = tf.data.Dataset.from_sparse_tensor_slices((data_train_placeholder, label_train_placeholder))
+
+    dataset_train = data_train.repeat(num_epochs)
+    iterator_train = dataset_train.make_initializable_iterator()
+    batch_num_per_epoch = math.ceil(num_train / batch_size)
+
+    dataset_val = tf.data.Dataset.from_sparse_tensor_slices((data_val_placeholder, label_val_placeholder))
     batch_num_val = math.ceil(num_val / batch_size)
+    iterator_val = dataset_val.make_initializable_iterator()
 
-    data = tf.placeholder(tf.float32, shape = (None, 224, 224, 3), name = "data")
-    label = tf.placeholder(tf.int64, shape = (None, ), name = "label")
-    labels_weights = tf.placeholder(tf.float32, shape=(None, ), name='labels_weights')
-    global_step = tf.Variable(0, trainable = False, name='global_step')
+    iterator = tf.data.Iterator.from_string_handle(handle, dataset_train.output_types)
+    (datas, labels) = iterator.get_next()
 
-    net = AlexNet(input = data, setting = setting)
-    logits = net.logit
-    probs = tf.nn.softmax(logits, name = "probs")
-    predictions = tf.argmax(probs, axis = -1, name = "prdictions")
-
-    loss_op = tf.losses.sparse_softmax_cross_entropy(labels = label, logits = logits, weights = labels_weights)
-    with tf.name_scope('metrics'):
-        loss_mean_op, loss_mean_update_op = tf.metrics.mean(loss_op)
-        t_1_acc_op, t_1_acc_update_op = tf.metrics.accuracy(label, predictions, weights = labels_weights)
-        t_1_per_class_acc_op, t_1_per_class_acc_update_op = tf.metrics.mean_per_class_accuracy(label, predictions, setting.CLASS_NUM, weights = labels_weights)
-
-    reset_metrics_op = tf.variables_initializer([var for var in tf.local_variables() if var.name.split('/')[0] == 'metrics'])
+    net = AlexNet(input = datas, setting = setting)
+    logits = net.logits
+    probs = tf.nn.softmax(logits, name = 'probs')
+    predictions = tf.argmax(probs, axis = -1, name = 'predictions')
     
-    _ = tf.summary.scalar('loss/train', tensor=loss_mean_op, collections=['train'])
-    _ = tf.summary.scalar('t_1_acc/train', tensor=t_1_acc_op, collections=['train'])
-    _ = tf.summary.scalar('t_1_per_class_acc/train', tensor=t_1_per_class_acc_op, collections=['train'])
-
-    _ = tf.summary.scalar('loss/val', tensor=loss_mean_op, collections=['val'])
-    _ = tf.summary.scalar('t_1_acc/val', tensor=t_1_acc_op, collections=['val'])
-    _ = tf.summary.scalar('t_1_per_class_acc/val', tensor=t_1_per_class_acc_op, collections=['val'])
-
-    lr_exp_op = tf.train.exponential_decay(setting.learning_rate_base, global_step, setting.decay_steps, setting.decay_rate, staircase = True)
-    lr_clip_op = tf.maximum(lr_exp_op, setting.learning_rate_min)
-
-    _ = tf.summary.scalar('learning_rate', tensor=lr_clip_op, collections=['train'])
-
-    reg_loss = setting.weight_decay * tf.losses.get_regularization_loss()
-    optimizer = tf.train.MomentumOptimizer(learning_rate = lr_clip_op, momentum = setting.momentum, use_nesterov = True)
-    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-    with tf.control_dependencies(update_ops):
-        train_op = optimizer.minimize(loss_op + reg_loss, global_step=global_step)
-
-    init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
-
-    saver = tf.train.Saver(max_to_keep = None)
-
-    # backup all code
-    code_folder = os.path.abspath(os.path.dirname(__file__))
-    shutil.copytree(code_folder, os.path.join(root_folder, os.path.basename(code_folder)))
-
-    folder_ckpt = os.path.join(root_folder, "ckpts")
-    if not os.path.exists(folder_ckpt):
-        os.makedirs(folder_ckpt, exist_ok = True)
-
-    folder_summary = os.path.join(root_folder, 'summary')
-    if not os.path.exists(folder_summary):
-        os.makedirs(folder_summary, exist_ok = True)
-
-    parameter_num = np.sum([np.prod(v.shape.as_list()) for v in tf.trainable_variables()])
-
-    print(parameter_num)
-
+    labels_2d = tf.expand_dims(labels, axis = -1, name = 'label_2d')
+    labels_tile = tf.tile(labels_2d, )
+    
 if __name__ == "__main__":
     main()
