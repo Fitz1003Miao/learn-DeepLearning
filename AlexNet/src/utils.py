@@ -34,7 +34,7 @@ def saveDataFromList(img_list, outpath, flag = None, withType = True):
 
     idx = 1
     for k, img in enumerate(img_list):
-        img_data = cv2.imread(img, -1)
+        img_data = cv2.imread(img, -1) / 256
         if withType:
             img_type = CLASS_NAME.index(img.split('/')[-1].split('.')[0])
         
