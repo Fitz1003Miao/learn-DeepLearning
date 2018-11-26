@@ -45,6 +45,8 @@ def main():
     label_train_placeholder = tf.placeholder(tf.int64, label_train.shape, name = 'label_train')
     data_val_placeholder = tf.placeholder(data_val.dtype, data_val.shape, name = 'data_val')
     label_val_placeholder = tf.placeholder(tf.int64, label_val.shape, name = 'label_val')
+    global_step = tf.Variable(0, trainable = False, name = 'global_step')
+
     handle = tf.placeholder(tf.string, shape = [], name = 'handle')
 
     dataset_train = tf.data.Dataset.from_sparse_tensor_slices((data_train_placeholder, label_train_placeholder))
@@ -66,7 +68,10 @@ def main():
     predictions = tf.argmax(probs, axis = -1, name = 'predictions')
     
     labels_2d = tf.expand_dims(labels, axis = -1, name = 'label_2d')
-    labels_tile = tf.tile(labels_2d, )
+    labels_tile = tf.tile(labels_2d, (1, tf.shape(logits)[1]), name = 'label_tile')
+    loss_op = tf.losses.sparse_softmax_cross_entropy(labels = labels_tile, logits = logits)
+
+    lr_exp_op = tf.train.exponential_decay(setting.learning_rate_base, global_step, setting.decay_steps, setting.decay_rate, staircase = True)
     
 if __name__ == "__main__":
     main()
