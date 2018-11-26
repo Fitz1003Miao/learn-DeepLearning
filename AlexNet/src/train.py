@@ -54,6 +54,7 @@ def main():
     dataset_train = data_train.repeat(num_epochs)
     iterator_train = dataset_train.make_initializable_iterator()
     batch_num_per_epoch = math.ceil(num_train / batch_size)
+    batch_num = batch_num_per_epoch * num_epochs
 
     dataset_val = tf.data.Dataset.from_sparse_tensor_slices((data_val_placeholder, label_val_placeholder))
     batch_num_val = math.ceil(num_val / batch_size)
@@ -72,6 +73,26 @@ def main():
     loss_op = tf.losses.sparse_softmax_cross_entropy(labels = labels_tile, logits = logits)
 
     lr_exp_op = tf.train.exponential_decay(setting.learning_rate_base, global_step, setting.decay_steps, setting.decay_rate, staircase = True)
-    
+    lr_clip_op = tf.maximum(lr_exp_op, setting.learning_rate_min)
+    reg_loss = setting.weight_decay * tf.losses.get_regularization_loss()
+
+    optimizer = tf.train.MomentumOptimizer(learning_rate = lr_exp_op, momentum = setting.momentum, use_nesterov=True)
+    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    with tf.control_dependencies(update_ops):
+        train_op = optimizer.minimize(loss_op + reg_loss, global_step = global_step)
+
+    init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+
+    with tf.Session() as sess:
+        sess.run(init_op)
+        handle_train = sess.run(iterator_train.string_handle())
+        handle_val = sess.run(iterator_val.string_handle())
+
+        sess.run(iterator_train.initializer, feed_dict = {data_train_placeholder : data_train, label_train_placeholder : label_train})
+
+        for batch_idx_train in range(batch_num):
+            if (batch_idx_train % step_val == 0 and batch_idx_train != 0) or batch_idx_train == batch_num - 1 :
+                sess.run(iterator_val.initializer, feed_dict = {data_val_placeholder : data_val, label_val_placeholder : label_val})
+        sess.run()
 if __name__ == "__main__":
     main()
