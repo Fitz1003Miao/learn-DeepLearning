@@ -29,7 +29,6 @@ def fcLayer(input, inputD, outputD, name):
         b = tf.get_variable('b', shape = [outputD], dtype = 'float')
 
         out = tf.nn.xw_plus_b(input, w, b, name = scope.name)
-
         return tf.nn.relu(out, name = scope.name)
 
 class AlexNet(object):

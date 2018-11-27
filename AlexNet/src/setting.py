@@ -1,8 +1,8 @@
 CLASS_NUM = 2
 
 batch_size = 128
-num_epochs = 90
-step_val = 5
+num_epochs = 100
+step_val = 10
 label_weights = [1.0] * CLASS_NUM
 
 learning_rate_base = 0.01
