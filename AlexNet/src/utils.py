@@ -34,7 +34,7 @@ def saveDataFromList(img_list, outpath, flag = None, withType = True):
 
     idx = 1
     for k, img in enumerate(img_list):
-        img_data = cv2.imread(img, -1) / 256
+        img_data = cv2.imread(img, -1)
         if withType:
             img_type = CLASS_NAME.index(img.split('/')[-1].split('.')[0])
         
@@ -75,11 +75,11 @@ def load_data(file):
         labels = []
         for line in f.readlines():
             path = line.strip('\n')
+            print(path)
             data = h5py.File(path, 'r')
             points.append(data['data'][...].astype(np.float32))
             labels.append(data['type'][...].astype(np.int64))
-
-        return (np.concatenate(points, axis = 0), np.concatenate(labels, axis = 0))
+        return (np.concatenate(points, axis = 0) / 256.0, np.concatenate(labels, axis = 0))
 
 def shuffle(data, label):
     assert(data.shape[0] == label.shape[0])

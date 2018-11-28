@@ -15,9 +15,9 @@ decay_rate = 0.8
 
 convLayer_param_name = ('kernel_num', 'conv_kernel_height', 'conv_kernel_width', 'conv_strideX', 'conv_strideY', 'conv_name', 'bias', 'group', 'conv_padding', 'lrn_index', 'pool_index')
 convLayer_params = [dict(zip(convLayer_param_name, convLayers_param)) for convLayers_param in 
-                     [(96, 11, 11, 4, 4, "conv1", 1, 1, "SAME", 0, 0),
+                     [(96, 11, 11, 4, 4, "conv1", 0, 1, "SAME", 0, 0),
                       (256, 5, 5, 1, 1, "conv2", 1, 2, "SAME", 1, 1),
-                      (384, 3, 3, 1, 1, "conv3", 1, 1, "SAME", None, None),
+                      (384, 3, 3, 1, 1, "conv3", 0, 1, "SAME", None, None),
                       (384, 3, 3, 1, 1, "conv4", 1, 2, "SAME", None, None),
                       (256, 3, 3, 1, 1, "conv5", 1, 2, "SAME", None, 2)]]
 
