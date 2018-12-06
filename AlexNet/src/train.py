@@ -22,7 +22,12 @@ class MyDataSet(torch.utils.data.Dataset):
     def __getitem__(self, index):
         img_path = self.data_path[index]
         label = CLASS_LIST.index(os.path.basename(img_path).split('.')[0])
-        img = self.trans(Image.open(img_path))
+        # img = self.trans(Image.open(img_path))
+        img = Image.open(img_path)
+        width, height = img.size
+        scale = min(width, height) / 256
+        img = img.resize([int(width / scale),int(height / scale)])
+        img = self.trans(img)
         return img, label
     def __len__(self):
         return len(self.data_path)
