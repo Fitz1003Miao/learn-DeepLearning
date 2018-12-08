@@ -6,23 +6,23 @@ class AlexNet(nn.Module):
     def __init__(self, num_classes = 2):
         super().__init__()
 
-        self.layer1 = nn.Sequential(nn.Conv2d(3, 96, 11, 4, padding = 3, groups = 1),
+        self.layer1 = nn.Sequential(nn.Conv2d(3, 96, 11, 4, padding = 2, groups = 1),
                                     nn.ReLU(inplace = True),
                                     nn.LocalResponseNorm(5, 1e-04, 0.75, 2),
                                     nn.MaxPool2d(3, 2))
 
-        self.layer2 = nn.Sequential(nn.Conv2d(96, 128, 5, 1, padding = 2, groups = 2),
+        self.layer2 = nn.Sequential(nn.Conv2d(96, 256, 5, 1, padding = 2, groups = 2),
                                     nn.ReLU(inplace = True),
                                     nn.LocalResponseNorm(5, 1e-04, 0.75, 2),
                                     nn.MaxPool2d(3, 2))
 
-        self.layer3 = nn.Sequential(nn.Conv2d(128, 384, 3, 1, padding = 1, groups = 1),
+        self.layer3 = nn.Sequential(nn.Conv2d(256, 384, 3, 1, padding = 1, groups = 1),
                                     nn.ReLU(inplace = True))
 
-        self.layer4 = nn.Sequential(nn.Conv2d(384, 192, 3, 1, padding = 1, groups = 2),
+        self.layer4 = nn.Sequential(nn.Conv2d(384, 384, 3, 1, padding = 1, groups = 2),
                                     nn.ReLU(inplace = True))
 
-        self.layer5 = nn.Sequential(nn.Conv2d(192, 256, 3, 1, padding = 1, groups = 2),
+        self.layer5 = nn.Sequential(nn.Conv2d(384, 256, 3, 1, padding = 1, groups = 2),
                                     nn.ReLU(inplace = True),
                                     nn.MaxPool2d(3, 2))
 
